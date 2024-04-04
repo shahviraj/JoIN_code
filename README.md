@@ -1,7 +1,5 @@
 ## JoIN; Official PyTorch implementation
 
-![Teaser image](./docs/stylegan2-ada-teaser-1024x252.png)
-
 **JoIN: Joint GAN Inversion for Intrinsic Image Decomposition**<br>
 Viraj Shah, Svetlana Lazebnik, Julien Philip<br>
 https://arxiv.org/pdf/2305.11321.pdf<br>
