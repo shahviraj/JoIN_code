@@ -1,3 +1,7 @@
+'''
+This script trains a CLIP-based index of large number of GAN-generated images to improve the initialization for GAN Inversion.
+'''
+
 import PIL.Image
 import os
 import time
