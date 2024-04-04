@@ -2,6 +2,10 @@
 This script trains a CLIP-based index of large number of GAN-generated images to improve the initialization for GAN Inversion.
 '''
 
+# Author: Viraj Shah, virajs@adobe.com; vjshah3@illinois.edu
+'''
+Training an index in the CLIP image space of 100k generated images. Such index can be used for better nearest neighbor based initialization.
+'''
 import PIL.Image
 import os
 import time

@@ -1,3 +1,4 @@
+# Author: Viraj Shah, virajs@adobe.com; vjshah3@illinois.edu
 '''
 This code is used to prepare the results for the paper and the presentation, by uploading them in the correct format, and
 generating the latex strings for the figures.

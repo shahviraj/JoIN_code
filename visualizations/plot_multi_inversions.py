@@ -1,3 +1,4 @@
+# Author: Viraj Shah, virajs@adobe.com; vjshah3@illinois.edu
 '''
 Code for creating the visualization of multiple inverted components for a single image.
 One can choose which parameters to vary and which to keep fixed for generating the grid of results by tweaking the `style` parameter below.

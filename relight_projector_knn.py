@@ -1,4 +1,4 @@
-# Author: Viraj Shah, virajs@adobe.com
+# Author: Viraj Shah, virajs@adobe.com; vjshah3@illinois.edu
 '''
 Main code for the Joint Inversion for Intrinsic Decomposition project. It inverts multiple GANs at once, in optimization fashion with kNN loss.
 '''

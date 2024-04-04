@@ -1,3 +1,4 @@
+# Author: Viraj Shah, virajs@adobe.com; vjshah3@illinois.edu
 '''
 Code for evaluating the results of the projection experiments on quantitative metrics.
 Change the paths in the OUTDIR and EXPT_PATHS dictionary to the paths of the experiments you want to evaluate.

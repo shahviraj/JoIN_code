@@ -1,3 +1,4 @@
+# Author: Viraj Shah, virajs@adobe.com; vjshah3@illinois.edu
 '''
 Trial function:
 Build the index of the random samples in the latent space for calculating the nearest neighbors for kNN loss

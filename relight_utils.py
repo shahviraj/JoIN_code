@@ -1,4 +1,4 @@
-# Author: Viraj Shah, virajs@adobe.com
+# Author: Viraj Shah, virajs@adobe.com; vjshah3@illinois.edu
 # Modified from
 # Copyright (c) 2021, NVIDIA CORPORATION.  All rights reserved.
 #

@@ -1,3 +1,4 @@
+# Author: Viraj Shah, virajs@adobe.com; vjshah3@illinois.edu
 '''
 Code for fine-tuning the generator networks for the relighting task. Once the projections are obtained using optimization,
 use this code for performing fine-tuning on the generator networks to get better results.

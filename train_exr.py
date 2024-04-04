@@ -1,4 +1,4 @@
-# Author: Viraj Shah, virajs@adobe.com
+# Author: Viraj Shah, virajs@adobe.com; vjshah3@illinois.edu
 # modified from official StyleGAN2-ADA code from NVIDIA
 """Train a GAN on EXR data (albedo/shading) using the techniques described in the paper
 "Training Generative Adversarial Networks with Limited Data"."""

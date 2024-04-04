@@ -1,3 +1,4 @@
+# Author: Viraj Shah, virajs@adobe.com; vjshah3@illinois.edu
 '''
 python visualizations/add_to_pdf.py
 This script will create a pdf file with all the images in the list imglist. The images are taken from the directory imgdir.
