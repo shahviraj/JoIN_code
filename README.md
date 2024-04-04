@@ -1,4 +1,4 @@
-## JoIN; Official PyTorch implementation
+## JoIN: Official PyTorch implementation
 
 **JoIN: Joint GAN Inversion for Intrinsic Image Decomposition**<br>
 Viraj Shah, Svetlana Lazebnik, Julien Philip<br>
@@ -32,7 +32,7 @@ For running evaluations, one may need to download the test sets for each of the 
 * [PrimeShapes](https://drive.google.com/file/d/1-1Q6J9Q6J9Q6J9Q6J9Q6J9Q6J9Q6J9Q6/view?usp=sharing)
 * [Materials](https://drive.google.com/file/d/1-1Q6J9Q6J9Q6J9Q6J9Q6J9Q6J9Q6J9Q6/view?usp=sharing)
 * [Lumos faces](https://drive.google.com/file/d/1-1Q6J9Q6J9Q6J9Q6J9Q6J9Q6J9Q6J9Q6/view?usp=sharing)
-* 
+  
 ## Stage 1: Run optimization-based inversion with kNN loss
 
 Optimization-based joint inversion is the first step in our pipeline. For synthetic datasets, this step alone is enough to obtain high-quality intrinsic image decompositions. The code automatically builds the index for computing the kNN loss, which requires `faiss` library. To install `faiss`, use `pip install faiss`.
@@ -136,4 +136,4 @@ python add_to_pdf.py
 
 
 ## Acknowledgements
-This work was done during an internship at Adobe Research. Parts of this codebase is based on the [StyleGAN2]() repo from Nvidia.
+This work was done during an internship at Adobe Research. Parts of this codebase is based on the [StyleGAN2 PyTorch](https://github.com/NVlabs/stylegan2-ada-pytorch/tree/main) repo from Nvidia.
