@@ -1,0 +1,213 @@
+# Training a GAN for Primeshapes and Materials dataset
+CUDA_VISIBLE_DEVICES=0,1,2,3 python train_exr.py --gpus=4 --cfg=auto --seed=0 --outdir=/sensei-fs/users/virajs/work/outputs/materials/ --data=/home/virajs/sensei-fs-symlink/tenants/Sensei-AdobeResearchTeam/share-juphilip/FlashMaterials/ --datatype=shading --batch=64
+
+# Training a GAN - Lumos dataset
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python train.py --gpus=8 --cfg=paper256 --seed=0 --outdir=/sensei-fs/users/virajs/work/outputs/lumos/ --data=/sensei-fs/users/virajs/work/data/lumos/shadow0/ --batch=256
+
+CUDA_VISIBLE_DEVICES=3,5,6,7 python train.py --gpus=8 --cfg=paper256 --seed=9 --outdir=/sensei-fs/users/virajs/work/outputs/lumos/ --data=/sensei-fs/users/virajs/work/data/lumos_faster/shading/ --batch=256
+
+# Inversion
+python primeshapes-relight-projector-knn.py --datadir=/home/virajs/sensei-fs-symlink/users/virajs/work/data/primeshapes/dataV2/ --outdir=/home/virajs/sensei-fs-symlink/users/virajs/work/outputs/projections/primeshapesV2_batch_base_vgg/ --target={img} --network1=/home/virajs/sensei-fs-symlink/users/virajs/work/outputs/primeshapes/shading-primeshapes-dataV2-70k-014515.pkl --network2=/home/virajs/sensei-fs-symlink/users/virajs/work/outputs/primeshapes/albedo-primeshapes-dataV2-70k-024393.pkl  --albedo-fixed=False --shading-fixed=False --init=/home/virajs/sensei-fs-symlink/users/virajs/work/outputs/stylevgg_cache/shading-primeshapes-dataV2-70k-014515-albedo-primeshapes-dataV2-70k-024393-vgg-ViT-B-32-1000000-reinhard-4/{img:06d}_k_20.pt --knn-path=/home/virajs/sensei-fs-symlink/users/virajs/work/outputs/indices/primeshapesV2 --loss-fn={losslist[0]} --alpha={alphalist[0]} --lr={lrlist[0]} --in-domain-w=0.0 --knn-w=0.0 --save-video=False --single-w=False --gpu-id=0
+
+# Training the VGG/CLIP index and save the cache
+python relightclip_train.py --shading_pkl=/home/virajs/sensei-fs-symlink/users/virajs/work/outputs/primeshapes/shading-primeshapes-dataV2-70k-014515.pkl --albedo_pkl=/home/virajs/sensei-fs-symlink/users/virajs/work/outputs/primeshapes/albedo-primeshapes-dataV2-70k-024393.pkl --save_dir="/sensei-fs/users/virajs/work/outputs/stylevgg_cache/" --datadir="/sensei-fs/users/virajs/work/data/primshapes/dataV2/" --feattype='vgg' --tm_scale=4.0 --n_samples=1000000
+
+# save the queries (nearest neighbors) for initialization
+python relightclip_train.py --shading_pkl=/home/virajs/sensei-fs-symlink/users/virajs/work/outputs/primeshapes/shading-primeshapes-dataV2-70k-014515.pkl --albedo_pkl=/home/virajs/sensei-fs-symlink/users/virajs/work/outputs/primeshapes/albedo-primeshapes-dataV2-70k-024393.pkl --save_dir="/sensei-fs/users/virajs/work/outputs/stylevgg_cache/" --datadir="/sensei-fs/users/virajs/work/data/primshapes/dataV2/" --feattype='vgg' --tm_scale=4.0 --n_samples=1000000 --query=1000 --k=10
+
+im_gloss_dir = cv2.imread(fname_dir, -1)
+im_gloss_dir = cv2.cvtColor(im_gloss_dir, cv2.COLOR_BGR2RGB)
+fname_dir = '/home/virajs/work/datasets/FlashMaterials/061809/glossy_dir0001.exr'
+
+# Train pSp encoder just for shading component
+
+python scripts/train.py --dataset_type=relight_encode --exp_dir=../../outputs/psp-fixed-al/ --workers=8 --batch_size=8 --test_batch_size=8 --test_workers=2 --val_interval=1000 --start_from_latent_avg --lpips_lambda=0.8 --l2_lambda=1 --id_lambda=0.0 --learn_in_w
+
+# Train pSp encoder for only one component without using any other component as supervision
+CUDA_VISIBLE_DEVICES=0 python scripts/train.py --dataset_type=relight_albedo --exp_dir=../../outputs/psp-just-al/ --workers=8 --batch_size=16 --test_batch_size=16 --test_workers=2 --val_interval=2000 --start_from_latent_avg --lpips_lambda=0.8 --l2_lambda=1 --id_lambda=0.0 --learn_in_w --stylegan_weights=../../models/albedo-primeshapes-dataV2-70k-024393-ros.pt
+
+# For materials
+CUDA_VISIBLE_DEVICES=1 python scripts/train.py --dataset_type=materials_shading --output_size=512 --exp_dir=../../outputs/psp-mat-just-sh-2/ --workers=8 --batch_size=4 --test_batch_size=4 --test_workers=2 --val_interval=5000 --start_from_latent_avg --lpips_lambda=0.8 --l2_lambda=1 --id_lambda=0.0 --learn_in_w --stylegan_weights=../../models/materials-shading-auto8-gamma10-batch96-12700-ros.pt
+
+# For faces
+CUDA_VISIBLE_DEVICES=4 python scripts/train.py --dataset_type=lumos_albedo --exp_dir=../../outputs/psp-lumos-just-al-2/ --workers=16 --batch_size=40 --test_batch_size=16 --test_workers=4 --val_interval=5000 --start_from_latent_avg --lpips_lambda=0.8 --l2_lambda=1 --id_lambda=0.0 --learn_in_w --stylegan_weights=../../models/lumos-albedo-paper256-batch128-24780-ros.pt --checkpoint_path=../../outputs/psp-lumos-just-al/checkpoints
+CUDA_VISIBLE_DEVICES=5 python scripts/train.py --dataset_type=lumos_shading --exp_dir=../../outputs/psp-lumos-just-sh/ --workers=16 --batch_size=40 --test_batch_size=16 --test_workers=4 --val_interval=5000 --start_from_latent_avg --lpips_lambda=0.8 --l2_lambda=1 --id_lambda=0.0 --learn_in_w --stylegan_weights=../../models/
+CUDA_VISIBLE_DEVICES=6 python scripts/train.py --dataset_type=lumos_specular --exp_dir=../../outputs/psp-lumos-just-sp/ --workers=16 --batch_size=40 --test_batch_size=16 --test_workers=4 --val_interval=5000 --start_from_latent_avg --lpips_lambda=0.8 --l2_lambda=1 --id_lambda=0.0 --learn_in_w --stylegan_weights=../../models/
+
+CUDA_VISIBLE_DEVICES=1 python scripts/train.py --dataset_type=lumos_specular --exp_dir=../../outputs/psp-lumos-just-sp-better/ --workers=8 --batch_size=20 --test_batch_size=16 --test_workers=4 --val_interval=5000 --start_from_latent_avg --lpips_lambda=0.8 --l2_lambda=1 --id_lambda=0.0 --learn_in_w --stylegan_weights=../../models/
+
+# resume training
+CUDA_VISIBLE_DEVICES=0 python scripts/train.py --dataset_type=materials_shading --output_size=512 --exp_dir=../../outputs/psp-mat-just-sh-4/ --workers=8 --batch_size=12 --test_batch_size=12 --test_workers=2 --val_interval=5000 --start_from_latent_avg --lpips_lambda=0.8 --l2_lambda=1 --id_lambda=0.0 --learn_in_w --stylegan_weights=../../models/materials-shading-auto8-gamma10-batch96-12700-ros.pt --checkpoint_path=/sensei-fs/users/virajs/work/outputs/psp-mat-just-sh-3/checkpoints/best_model.pt
+
+CUDA_VISIBLE_DEVICES=3 python scripts/inference.py --exp_dir=../../outputs/psp-mat-just-al-init-5/ --checkpoint_path=/sensei-fs/users/virajs/work/outputs/psp-mat-just-sh-5/checkpoints/best_model.pt --data_path=/home/virajs/work/datasets/FlashMaterials-small-test/
+
+# convert weights
+cd stylegan2-ada-pytorch
+python export_weights.py /sensei-fs/users/virajs/work/outputs/materials/00025--shading-auto8-gamma10-batch96-resumecustom/network-snapshot-012700.pkl  /sensei-fs/users/virajs/work/models/materials-shading-auto8-gamma10-batch96-12700-ros.pt
+python export_weights.py /sensei-fs/users/virajs/work/outputs/materials/00034--specular-auto8-gamma10-batch96-resumecustom/network-snapshot-002822.pkl  /sensei-fs/users/virajs/work/models/materials-specular-auto8-gamma10-batch96-02822-ros.pt
+python export_weights.py /sensei-fs/users/virajs/work/outputs/lumos/00000--paper256-batch128/network-snapshot-024780.pkl /sensei-fs/users/virajs/work/models/lumos-albedo-paper256-batch128-24780-ros.pt
+python export_weights.py /sensei-fs/users/virajs/work/outputs/lumos/00007--paper256-shading-gamma10-batch128/network-snapshot-007372.pkl /sensei-fs/users/virajs/work/models/lumos-shading-paper256-gamma10-07372-ros.pt
+python export_weights.py /sensei-fs/users/virajs/work/outputs/lumos/00008--paper256-specular-batch128/network-snapshot-008396.pkl /sensei-fs/users/virajs/work/models/lumos-specular-paper256-batch128-08396-ros.pt
+python export_weights.py /sensei-fs/users/virajs/work/outputs/lumos/00007--paper256-shading-gamma10-batch128/network-snapshot-023756.pkl /sensei-fs/users/virajs/work/models/lumos-shading-paper256-gamma10-023756-ros.pt
+python export_weights.py /sensei-fs/users/virajs/work/outputs/lumos/00008--paper256-specular-batch128/network-snapshot-023756.pkl /sensei-fs/users/virajs/work/models/lumos-specular-paper256-batch128-023756-ros.pt
+
+# Scripts for training encoders
+CUDA_VISIBLE_DEVICES=0 python scripts/train.py --dataset_type=materials_shading --output_size=512 --exp_dir=../../outputs/psp-mat-just-sh-4/ --workers=8 --batch_size=12 --test_batch_size=12 --test_workers=2 --val_interval=5000 --start_from_latent_avg --lpips_lambda=0.8 --l2_lambda=1 --id_lambda=0.0 --learn_in_w --stylegan_weights=../../models/materials-shading-auto8-gamma10-batch96-12700-ros.pt --checkpoint_path=/sensei-fs/users/virajs/work/outputs/psp-mat-just-sh-3/checkpoints/best_model.pt
+
+CUDA_VISIBLE_DEVICES=1 python scripts/train.py --dataset_type=materials_albedo --output_size=512 --exp_dir=../../outputs/psp-mat-just-al-4/ --workers=8 --batch_size=12 --test_batch_size=12 --test_workers=2 --val_interval=5000 --start_from_latent_avg --lpips_lambda=0.8 --l2_lambda=1 --id_lambda=0.0 --learn_in_w --stylegan_weights=../../models/materials-albedo-auto4-batch48-12499-ros.pt --checkpoint_path=/sensei-fs/users/virajs/work/outputs/psp-just-mat-al-3/checkpoints/best_model.pt
+
+CUDA_VISIBLE_DEVICES=2 python scripts/train.py --dataset_type=materials_specular --output_size=512 --exp_dir=../../outputs/psp-mat-just-spec-4/ --workers=8 --batch_size=12 --test_batch_size=12 --test_workers=2 --val_interval=5000 --start_from_latent_avg --lpips_lambda=0.8 --l2_lambda=1 --id_lambda=0.0 --learn_in_w --stylegan_weights=../../models/materials-specular-auto8-gamma10-batch96-02822-ros.pt --checkpoint_path=/sensei-fs/users/virajs/work/outputs/psp-mat-just-spec-3/checkpoints/best_model.pt
+
+
+# General inversion scripts
+
+# for lumos
+python general-relight-projector-knn.py --datadir=/sensei-fs/users/virajs/work/data/lumos2/ --outdir=/home/virajs/sensei-fs-symlink/users/virajs/work/outputs/projections/lumos_all_try/ --target=5 --network1=/sensei-fs/users/virajs/work/outputs/lumos/00007--paper256-shading-gamma10-batch128/network-snapshot-007372.pkl --network2=/sensei-fs/users/virajs/work/outputs/lumos/00000--paper256-batch128/network-snapshot-024780.pkl --network3=/sensei-fs/users/virajs/work/outputs/lumos/00008--paper256-specular-batch128/network-snapshot-008396.pkl --use-specular --loss-fn=elpips --alpha=1000.0 --lr=0.1 --num-steps=1000 --in-domain-w=0.0001 --knn-w=0.001 --single-w --dataset=lumos --gpu-id=7 --knn-path=/sensei-fs/users/virajs/work/outputs/indices/lumos
+
+
+# List of trained GAN models used
+Models list:
+
+Lumos Faces: Albedo model is done with auto gamma and FID : 5.5
+
+/sensei-fs/users/virajs/work/outputs/lumos/00000--paper256-batch128/network-snapshot-024780.pkl
+
+Lumos Faces: Shadow0 model is done with gamma 10 and FID: 4.4
+
+sensei-fs-symlink/users/virajs/work/outputs/lumos/00005--paper256-shadow0-gamma10-batch96/network-snapshot-013708.pkl
+
+Lumos new generators (using new definition of shading and specular) :
+
+shading: /sensei-fs/users/virajs/work/outputs/lumos/00007--paper256-shading-gamma10-batch128/network-snapshot-007372.pkl. — 8.2 FID
+
+specular: /sensei-fs/users/virajs/work/outputs/lumos/00008--paper256-specular-batch128/network-snapshot-008396.pkl — 14.08 FID
+
+Lumos— even better generators!! for shading and specular
+
+shading: /sensei-fs/users/virajs/work/outputs/lumos/00007--paper256-shading-gamma10-batch128/network-snapshot-023756.pkl — 6.02
+
+specular: /sensei-fs/users/virajs/work/outputs/lumos/00008--paper256-specular-batch128/network-snapshot-023756.pkl. — 8.44
+
+Materials:
+
+Albedo model is done with FID :
+
+/sensei-fs/users/virajs/work/outputs/materials/00028--albedo-auto4-batch48-resumecustom/network-snapshot-005040.pkl : 19.85
+
+/sensei-fs/users/virajs/work/outputs/materials/00006--albedo-auto4-batch48/network-snapshot-012499.pkl : 18.73
+
+Shading model is done with FID: 13.05
+
+python export_weight.py /sensei-fs/users/virajs/work/outputs/materials/00025--shading-auto8-gamma10-batch96-resumecustom/network-snapshot-012700.pkl  /sensei-fs/users/virajs/work/models/materials-shading-auto8-gamma10-batch96-12700-ros.pt
+
+Specular model is in progress: FID: 18.58
+
+sensei-fs-symlink/users/virajs/work/outputs/materials/00034--specular-auto8-gamma10-batch96-resumecustom/network-snapshot-002822.pkl
+
+
+if opts.save_video:
+        with torch.no_grad():
+            if not opts.sh_fixed:
+                video_sh = imageio.get_writer(f'{impath}_shading_video.mp4', mode='I', fps=10, codec='libx264',
+                                              bitrate='16M')
+                print(f'Saving optimization progress video for shading at {impath}_shading_video.mp4')
+
+            if not opts.al_fixed:
+                video_al = imageio.get_writer(f'{impath}_albedo_video.mp4', mode='I', fps=10, codec='libx264',
+                                              bitrate='16M')
+                print(f'Saving optimization progress video for albedo at {impath}_albedo_video.mp4')
+
+            video_pr = imageio.get_writer(f'{impath}_projection_video.mp4', mode='I', fps=10, codec='libx264',
+                                          bitrate='16M')
+            print(f'Saving optimization progress video for projection at {impath}_projection_video.mp4')
+
+            for i in range(opts.num_steps + 1):
+
+                if not opts.sh_fixed:
+                    if opts.single_w:
+                        synth_sh_image = G_sh.synthesis(w_sh_out[i].unsqueeze(0).repeat([1, G_sh.mapping.num_ws, 1]),
+                                                        noise_mode='const')
+                    else:
+                        synth_sh_image = G_sh.synthesis(w_sh_out[i].unsqueeze(0), noise_mode='const')
+                    synth_sh_image = (synth_sh_image + 1.0) * (1.0 / 2)
+                    synth_sh_image = torch.clip(synth_sh_image, 0.01, 0.99)
+                    if tonemap == 'gamma':
+                        synth_sh_raw_image = inv_tonemap_gamma(synth_sh_image, opt='shading')
+                    else:
+                        synth_sh_raw_image = inv_tonemap(synth_sh_image, opt='shading')
+                    final_sh_image = (255.0 * synth_sh_image).permute(0, 2, 3, 1).clamp(0, 255.0).to(torch.uint8)[
+                        0].cpu().numpy()
+
+                    my_image = Image.fromarray(final_sh_image)
+
+                    # title_font = ImageFont.truetype('font.ttf', 200)
+                    image_editable = ImageDraw.Draw(my_image)
+                    image_editable.text((15, 15),
+                                        f"dist: {all_dist[i]:.4f}, \n loss: {all_loss[i]:.4f}, \n step: {i}, lr: {all_lr[i]:.4f}",
+                                        (10, 10, 240))
+                    final_sh_image = np.array(my_image)
+                    # print(shadingim.shape)
+                    video_sh.append_data(
+                        np.concatenate([shadingim.permute(0, 2, 3, 1).squeeze().cpu().numpy(), final_sh_image], axis=1))
+                else:
+                    synth_sh_raw_image = G_sh
+
+                if not opts.al_fixed:
+                    if opts.single_w:
+                        synth_al_image = G_al.synthesis(w_al_out[i].unsqueeze(0).repeat([1, G_al.mapping.num_ws, 1]),
+                                                        noise_mode='const')
+                    else:
+                        synth_al_image = G_al.synthesis(w_al_out[i].unsqueeze(0), noise_mode='const')
+                    synth_al_image = (synth_al_image + 1.0) * (1.0 / 2)
+                    synth_al_image = torch.clip(synth_al_image, 0.01, 0.99)
+                    if tonemap == 'gamma':
+                        synth_al_raw_image = inv_tonemap_gamma(synth_al_image, opt='albedo')
+                    else:
+                        synth_al_raw_image = inv_tonemap(synth_al_image, opt='albedo')
+                    final_al_image = (255.0 * synth_al_image).permute(0, 2, 3, 1).clamp(0, 255.0).to(torch.uint8)[
+                        0].cpu().numpy()
+                    my_image = Image.fromarray(final_al_image)
+
+                    # title_font = ImageFont.truetype('font.ttf', 200)
+                    image_editable = ImageDraw.Draw(my_image)
+                    image_editable.text((15, 15),
+                                        f"dist: {all_dist[i]:.4f}, \n loss: {all_loss[i]:.4f}, \n step: {i}, lr: {all_lr[i]:.4f}",
+                                        (10, 10, 240))
+                    final_al_image = np.array(my_image)
+
+                    video_al.append_data(
+                        np.concatenate([albedoim.permute(0, 2, 3, 1).squeeze().cpu().numpy(), final_al_image], axis=1))
+                else:
+                    synth_al_raw_image = G_al
+
+                final_target_image = (synth_al_raw_image * synth_sh_raw_image)
+                if tonemap == 'gamma':
+                    final_target_image = 255.0 * (tonemap_gamma(final_target_image))
+                else:
+                    final_target_image = 255.0 * ((4.0 * final_target_image) / (4.0 * final_target_image + 1.0))
+                final_target_image = final_target_image.permute(0, 2, 3, 1).clamp(0, 255.0).to(torch.uint8)[
+                    0].cpu().numpy()
+
+                my_image = Image.fromarray(final_target_image)
+
+                # title_font = ImageFont.truetype('font.ttf', 200)
+                image_editable = ImageDraw.Draw(my_image)
+                image_editable.text((15, 15),
+                                    f"dist: {all_dist[i]:.4f}, \n loss: {all_loss[i]:.4f}, \n step: {i}, lr: {all_lr[i]:.4f}",
+                                    (10, 10, 240))
+                final_target_image = np.array(my_image)
+
+                # print(target.shape)
+                video_pr.append_data(np.concatenate(
+                    [target.permute(0, 2, 3, 1).squeeze().detach().to(torch.uint8).cpu().numpy(), final_target_image],
+                    axis=1))
+
+            video_pr.close()
+            if not opts.sh_fixed:
+                video_sh.close()
+            if not opts.al_fixed:
+                video_al.close()
+
+            # plt.plot(all_lr)
+            # plt.title("Variation of learning rate across the steps")
+            # plt.savefig(f'{impath}_lrplot.png', bbox_inches='tight')
