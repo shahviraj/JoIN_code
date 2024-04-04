@@ -40,7 +40,7 @@ Optimization-based joint inversion is the first step in our pipeline. For synthe
 To run the optimization-based inversion with kNN loss, use the following command:
 
 ```.bash
-python relight_projector.py \
+python relight_projector_knn.py \
     --datadir={DATADIR} \
     --outdir={OUTDIR} \
     --target={img} \
